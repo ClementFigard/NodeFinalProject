@@ -1,22 +1,24 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import bodyParser from "body-parser";
 import { v4 as uuidv4 } from "uuid";
 import cors from "cors";
 import { Pool } from "pg";
-
+import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import { Todo } from "./types";
 
+dotenv.config({ path: '../process.env' }); // Charger les variables d'environnement
+
 const app = express();
-const PORT = 8000;
+const PORT: number = parseInt(process.env.PORT || "8000");
 
 const pool = new Pool({
-  user: "avnadmin",
-  host: "pg-todo-oissa24.g.aivencloud.com",
-  database: "defaultdb",
-  password: "AVNS_CoBTps1vQXmpWRJHA2U",
-  port: 26398,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: parseInt(process.env.DB_PORT || "5432"),
   ssl: {
     rejectUnauthorized: false,
   },
@@ -56,7 +58,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(bodyParser.json());
 
-app.get("/todos", async (req, res) => {
+app.get("/todos", async (req: Request, res: Response) => {
   try {
     const result = await pool.query(
       "SELECT * FROM todos ORDER BY created_at DESC"
@@ -76,7 +78,7 @@ app.get("/todos", async (req, res) => {
   }
 });
 
-app.get("/todos/:id", async (req, res) => {
+app.get("/todos/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const result = await pool.query("SELECT * FROM todos WHERE id = $1", [id]);
@@ -95,7 +97,7 @@ app.get("/todos/:id", async (req, res) => {
   }
 });
 
-app.post("/todos", async (req, res) => {
+app.post("/todos", async (req: Request, res: Response) => {
   const { title, description, status } = req.body;
   const id = uuidv4();
   try {
@@ -111,7 +113,7 @@ app.post("/todos", async (req, res) => {
   }
 });
 
-app.put("/todos/:id", async (req, res) => {
+app.put("/todos/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   const { title, description, status } = req.body;
   try {
@@ -132,7 +134,7 @@ app.put("/todos/:id", async (req, res) => {
   }
 });
 
-app.delete("/todos/:id", async (req, res) => {
+app.delete("/todos/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
@@ -153,142 +155,3 @@ app.delete("/todos/:id", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Todo:
- *       type: object
- *       required:
- *         - title
- *         - description
- *         - status
- *       properties:
- *         id:
- *           type: string
- *           description: The auto-generated id of the todo
- *         title:
- *           type: string
- *           description: The title of the todo
- *         description:
- *           type: string
- *           description: The detailed description of the todo
- *         status:
- *           type: string
- *           description: The current status of the todo (e.g., pending, completed)
- *         createdAt:
- *           type: string
- *           format: date-time
- *           description: The creation timestamp of the todo
- *         updatedAt:
- *           type: string
- *           format: date-time
- *           description: The last update timestamp of the todo
- *       example:
- *         id: d5fE_asz
- *         title: Write documentation
- *         description: Complete the Swagger API documentation for the project
- *         status: pending
- *         createdAt: 2024-12-01T10:00:00Z
- *         updatedAt: 2024-12-05T15:30:00Z
- */
-
-/**
- * @swagger
- * /todos:
- *   get:
- *     summary: Returns a list of todos
- *     responses:
- *       200:
- *         description: A list of todos
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Todo'
- */
-
-/**
- * @swagger
- * /todos/{id}:
- *   get:
- *     summary: Get the todo by id
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: The id of the todo
- *     responses:
- *       200:
- *         description: The todo description by id
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Todo'
- *       404:
- *         description: The todo was not found
- */
-
-/**
- * @swagger
- * /todos:
- *   post:
- *     summary: Create a new todo
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Todo'
- *     responses:
- *       201:
- *         description: Todo created
- */
-
-/**
- * @swagger
- * /todos/{id}:
- *   put:
- *     summary: Update a todo by id
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: The id of the todo to update
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Todo'
- *     responses:
- *       200:
- *         description: Todo updated
- *       404:
- *         description: The todo was not found
- */
-
-/**
- * @swagger
- * /todos/{id}:
- *   delete:
- *     summary: Deletes a todo
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: The id of the todo to delete
- *     responses:
- *       200:
- *         description: Todo deleted
- *       404:
- *         description: The todo was not found
- */
